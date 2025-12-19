@@ -4,9 +4,11 @@
 
 #include "stm32c0xx.h"
 #include "stdint.h"
+#include "error_codes.h"
 
-void initTmr3(void);
+ErrorCode_t initTmr3(uint32_t targetFreqHz);
+ErrorCode_t elapsedTicks_Tmr3(uint32_t *milliSeconds);
+ErrorCode_t delayTicks_Tmr3(uint32_t milliSeconds);
 
-void delay1Sec(void);
 
 #endif

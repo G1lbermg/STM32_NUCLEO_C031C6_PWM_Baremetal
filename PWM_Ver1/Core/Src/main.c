@@ -17,12 +17,12 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <errorCheckUtilities.h>
 #include "main.h"
-#include "buttonBSP.h"
-#include "ledBSP.h"
+#include "button_BSP.h"
+#include "led_BSP.h"
 #include "timer3_PwmBSP.h"
-#include "uartBSP.h"
+#include "usart2_BSP.h"
+#include "error_check_utilities.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,6 +57,8 @@
 #define PIN_13 0xDU
 #define PIN_14 0xEU
 #define PIN_15 0xFU
+
+#define DUTY_CYCLE_LVLS 5
 
 /* USER CODE END PM */
 
@@ -113,10 +115,13 @@ int main(void)
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
 
-  ERROR_CHECK(initLED(GPIOA, PIN_5));
-  ERROR_CHECK(initButton(GPIOA, PIN_15));
+  LED_t OnboardLED;
+  initLED(&OnboardLED, GPIOA, PIN_5);
 
-  initUART();
+  Button_t UserButton;
+  initButton(&UserButton, GPIOC, PIN_13);
+
+  initUSART2();
   initPWM_Tim3Ch1();
   setDutyCycle_Tim3Ch1(100U);
 
@@ -125,25 +130,23 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  #define NUM_PWR_LVLS 5
+  const uint16_t dutyCycle[DUTY_CYCLE_LVLS] = {0U,25U,50U,75U,100U};
 
-  const uint16_t powerLevels[NUM_PWR_LVLS] = {0U,25U,50U,75U,100U};
   uint16_t buttonState, count = 0;
-
-  turnOffLED(GPIOA, PIN_5);
+  turnOffLED(&OnboardLED);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
-	readButton(GPIOA, PIN_15, &buttonState);
+	readButton(&UserButton, &buttonState);
 	if(buttonState == 0){
-		printMsgNL("Button Pressed!");
 		count++;
-		count = count % NUM_PWR_LVLS;
+		count = count % DUTY_CYCLE_LVLS;
+		printMsgNL_USART2("Duty Cycle Changed to %%%u!", dutyCycle[count]);
 
-		setDutyCycle_Tim3Ch1(powerLevels[count]);
+		setDutyCycle_Tim3Ch1(dutyCycle[count]);
 		LL_mDelay(200);
 	}
 
