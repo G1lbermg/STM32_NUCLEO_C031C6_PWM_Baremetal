@@ -20,7 +20,7 @@
 #include "main.h"
 #include "button_BSP.h"
 #include "led_BSP.h"
-#include "timer3_PwmBSP.h"
+#include "timer3_BSP.h"
 #include "usart2_BSP.h"
 #include "error_check_utilities.h"
 
@@ -123,7 +123,11 @@ int main(void)
 
   initUSART2();
   initPWM_Tim3Ch1();
-  setDutyCycle_Tim3Ch1(100U);
+  initCounter_Tmr3(1000);
+
+  printMsgNL_USART2("Nucleo Initialized!");
+  __enable_irq();
+
 
   /* USER CODE END 2 */
 
@@ -140,6 +144,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	  /*
+	  turnOffLED(&OnboardLED);
+	  delayTicks_Tmr3(1000);
+	  turnOnLED(&OnboardLED);
+	  delayTicks_Tmr3(1000);
+*/
 	readButton(&UserButton, &buttonState);
 	if(buttonState == 0){
 		count++;
