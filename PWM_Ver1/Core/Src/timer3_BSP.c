@@ -4,26 +4,36 @@
 #define TMR_TICK_DIVISOR (ARR_VALUE +1)
 
 
-/*****************Code to use the timer as a counter *****************************/
-
-//Counter records the number of ms elapsed since start of program.
-//Good up to ~49.772 days
+//Counter records the number of ticks elapsed since start of program.
 static uint32_t volatile timer3Counter = 0U;
 
 void TIM3_IRQHandler(void)
 {
-	__disable_irq();
-
 	// Clear the Update Interrupt Flag (UIF) if it was set by the UEV
 	CLEAR_BIT(TIM3->SR, TIM_SR_UIF);
 
 	//Increment timer
 	timer3Counter++;
-
-	__enable_irq();
 }
 
-//Initialization code to setup a timer given a System core clock of 48Mhz
+void startCounter_Tmr3(void)
+{
+	//Force update to registers
+	WRITE_REG(TIM3->EGR,TIM_EGR_UG);
+
+	// Clear the Update Interrupt Flag (UIF) if it was set by the UEV
+	CLEAR_BIT(TIM3->SR, TIM_SR_UIF);
+
+	//Enable timer3 interrupt
+	__NVIC_EnableIRQ(TIM3_IRQn);
+
+	//Enable the counter
+	SET_BIT(TIM3->CR1, TIM_CR1_CEN);
+}
+
+/*****************Code to setup the timer *****************************/
+//Initialization code to setup a timer. System core clock expected to be 48Mhz
+
 ErrorCode_t initCounter_Tmr3(uint32_t targetFreqHz)
 {
 //------1. PSC value calculations---------
@@ -61,31 +71,16 @@ ErrorCode_t initCounter_Tmr3(uint32_t targetFreqHz)
 	WRITE_REG(TIM3->PSC,pscValue);
 	WRITE_REG(TIM3->ARR, ARR_VALUE);
 
-	//Enable UEV(update events)
-	CLEAR_BIT(TIM3->CR1,TIM_CR1_UDIS);
-
-	//Force update to registers
-	WRITE_REG(TIM3->EGR,TIM_EGR_UG);
-
-	// Clear the Update Interrupt Flag (UIF) if it was set by the UEV
-	CLEAR_BIT(TIM3->SR, TIM_SR_UIF);
-
 	//Enable update interrupts
 	SET_BIT(TIM3->DIER,TIM_DIER_UIE);
-
-	//Enable timer3 interrupt
-	__NVIC_EnableIRQ(TIM3_IRQn);
-
-	//Enable the counter
-	SET_BIT(TIM3->CR1, TIM_CR1_CEN);
 
 	return E_OK;
 }
 
-ErrorCode_t elapsedTicks_Tmr3(uint32_t *milliSeconds)
+ErrorCode_t elapsedTicks_Tmr3(uint32_t *ticks)
 {
 	//Check for NULL Pointer
-	if(milliSeconds == 0)
+	if(ticks == 0)
 		return E_INVALID_ARGUMENT;
 
 	uint32_t readTime;
@@ -95,12 +90,12 @@ ErrorCode_t elapsedTicks_Tmr3(uint32_t *milliSeconds)
 	readTime = timer3Counter;
 	__enable_irq();
 
-	*milliSeconds = readTime;
+	*ticks = readTime;
 
 	return E_OK;
 }
 
-ErrorCode_t delayTicks_Tmr3(uint32_t milliSeconds)
+ErrorCode_t delayTicks_Tmr3(uint32_t ticks)
 {
 	uint32_t startTime, currentTime;
 	ErrorCode_t errorCheck;
@@ -120,7 +115,7 @@ ErrorCode_t delayTicks_Tmr3(uint32_t milliSeconds)
 			return errorCheck;
 
         // Check condition
-        if (currentTime - startTime >= milliSeconds)
+        if (currentTime - startTime >= ticks)
         {
             break; // Exit the function after 1000 milli-seconds have passed
         }
@@ -131,12 +126,11 @@ ErrorCode_t delayTicks_Tmr3(uint32_t milliSeconds)
 
 /*****************Code to use the timer to drive a PWM signal*****************************/
 
-//--------Timer 3 Channel 1---------
+//--------Timer 3 Channel 1 (PB4 on MCU)------------
 
+/*PWM output frequency is dependent on the one cofigured in the init function.*/
 void initPWM_Tim3Ch1(void)
 {
-	/*Sets timer 3 to have a 1KHz output frequency. Kernel clock is expected to be 48MHz.
-	 * Channel 3 is configured to output the pwm signal*/
 
 	/********************PWM on GPIO PB4 settings*************************/
 	//Enable PB4 clock gate
@@ -149,11 +143,7 @@ void initPWM_Tim3Ch1(void)
 	CLEAR_BIT(GPIOB->AFR[0], GPIO_AFRL_AFSEL4);
 	SET_BIT(GPIOB->AFR[0], GPIO_AFRL_AFSEL4_0);
 
-	/********************Timer 3 PWM settings*************************/
-	//Enable timer 3 clock gate
-	SET_BIT(RCC->APBENR1,RCC_APBENR1_TIM3EN);
-
-	//initializing PWM on timer 3 Ch1 which corresponds to PB4
+	/********************Timer 3 Ch1 PWM settings*************************/
 
 	//Configure output pin
 	CLEAR_BIT(TIM3 -> CCMR1, TIM_CCMR1_CC1S); //configure pin as output
@@ -185,7 +175,7 @@ uint8_t setDutyCycle_Tim3Ch1(uint16_t percentage)
 		return 0;
 	}
 	else{
-		dutyCycle = (percentage*1000) / 100; //technically ((percentage/100) * 1000 but avoids truncating division
+		dutyCycle = (percentage*(ARR_VALUE+1)) / 100; //technically ((percentage/100) * (ARR+1) but avoids truncating division
 		WRITE_REG(TIM3->CCR1, dutyCycle);
 
 		return 1;

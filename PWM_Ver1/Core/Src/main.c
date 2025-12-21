@@ -122,8 +122,11 @@ int main(void)
   initButton(&UserButton, GPIOC, PIN_13);
 
   initUSART2();
-  initPWM_Tim3Ch1();
+
   initCounter_Tmr3(1000);
+  initPWM_Tim3Ch1();
+  setDutyCycle_Tim3Ch1(100U);
+  startCounter_Tmr3();
 
   printMsgNL_USART2("Nucleo Initialized!");
   __enable_irq();
@@ -144,12 +147,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  /*
-	  turnOffLED(&OnboardLED);
-	  delayTicks_Tmr3(1000);
-	  turnOnLED(&OnboardLED);
-	  delayTicks_Tmr3(1000);
-*/
 	readButton(&UserButton, &buttonState);
 	if(buttonState == 0){
 		count++;
@@ -157,7 +154,7 @@ int main(void)
 		printMsgNL_USART2("Duty Cycle Changed to %%%u!", dutyCycle[count]);
 
 		setDutyCycle_Tim3Ch1(dutyCycle[count]);
-		LL_mDelay(200);
+		delayTicks_Tmr3(200);
 	}
 
   }
