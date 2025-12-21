@@ -129,7 +129,7 @@ ErrorCode_t delayTicks_Tmr3(uint32_t ticks)
 //--------Timer 3 Channel 1 (PB4 on MCU)------------
 
 /*PWM output frequency is dependent on the one cofigured in the init function.*/
-void initPWM_Tim3Ch1(void)
+ErrorCode_t initPWM_Tim3Ch1(void)
 {
 
 	/********************PWM on GPIO PB4 settings*************************/
@@ -165,20 +165,22 @@ void initPWM_Tim3Ch1(void)
 
 	//Enable the capture compare
 	SET_BIT(TIM3->CCER,TIM_CCER_CC1E);
+
+	return E_OK;
 }
 
-uint8_t setDutyCycle_Tim3Ch1(uint16_t percentage)
+ErrorCode_t setDutyCycle_Tim3Ch1(uint16_t percentage)
 {
 	uint16_t dutyCycle;
 
 	if(percentage > 100U || percentage < 0U){
-		return 0;
+		return E_INVALID_ARGUMENT;
 	}
 	else{
 		dutyCycle = (percentage*(ARR_VALUE+1)) / 100; //technically ((percentage/100) * (ARR+1) but avoids truncating division
 		WRITE_REG(TIM3->CCR1, dutyCycle);
 
-		return 1;
+		return E_OK;
 	}
 
 }

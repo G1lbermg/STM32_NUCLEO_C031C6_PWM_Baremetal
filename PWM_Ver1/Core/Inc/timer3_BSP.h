@@ -15,7 +15,7 @@ ErrorCode_t delayTicks_Tmr3(uint32_t ticks);
 /*****************Code to use the timer to drive a PWM signal*****************************/
 
 //--------Timer 3 Channel 1---------
-void initPWM_Tim3Ch1(void);
-uint8_t setDutyCycle_Tim3Ch1(uint16_t percentage);
+ErrorCode_t initPWM_Tim3Ch1(void);
+ErrorCode_t setDutyCycle_Tim3Ch1(uint16_t percentage);
 
 #endif
