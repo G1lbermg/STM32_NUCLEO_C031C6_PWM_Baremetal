@@ -17,12 +17,12 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <errorCheckUtilities.h>
 #include "main.h"
-#include "buttonBSP.h"
-#include "ledBSP.h"
-#include "timer3_PwmBSP.h"
-#include "uartBSP.h"
+#include "button_BSP.h"
+#include "led_BSP.h"
+#include "timer3_BSP.h"
+#include "usart2_BSP.h"
+#include "error_check_utilities.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,6 +57,8 @@
 #define PIN_13 0xDU
 #define PIN_14 0xEU
 #define PIN_15 0xFU
+
+#define DUTY_CYCLE_LVLS 5
 
 /* USER CODE END PM */
 
@@ -113,38 +115,46 @@ int main(void)
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
 
-  ERROR_CHECK(initLED(GPIOA, PIN_5));
-  ERROR_CHECK(initButton(GPIOA, PIN_15));
+  LED_t OnboardLED;
+  check_Error(initLED(&OnboardLED, GPIOA, PIN_5),__FILE__,__LINE__);
 
-  initUART();
-  initPWM_Tim3Ch1();
-  setDutyCycle_Tim3Ch1(100U);
+  Button_t UserButton;
+  check_Error(initButton(&UserButton, GPIOC, PIN_13),__FILE__ ,__LINE__);
+
+  check_Error(initUSART2(),__FILE__,__LINE__);
+
+  check_Error(initCounter_Tmr3(1000),__FILE__,__LINE__);
+  check_Error(initPWM_Tim3Ch1(),__FILE__,__LINE__);
+  check_Error(setDutyCycle_Tim3Ch1(100U),__FILE__,__LINE__);
+  check_Error(startCounter_Tmr3(),__FILE__,__LINE__);
+
+  check_Error(printMsgNL_USART2("Nucleo Initialized!"),__FILE__,__LINE__);
+  __enable_irq();
+
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  #define NUM_PWR_LVLS 5
+  const uint16_t dutyCycle[DUTY_CYCLE_LVLS] = {0U,25U,50U,75U,100U};
 
-  const uint16_t powerLevels[NUM_PWR_LVLS] = {0U,25U,50U,75U,100U};
   uint16_t buttonState, count = 0;
-
-  turnOffLED(GPIOA, PIN_5);
+  check_Error(turnOffLED(&OnboardLED),__FILE__,__LINE__);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
-	readButton(GPIOA, PIN_15, &buttonState);
+	  check_Error(readButton(&UserButton, &buttonState),__FILE__,__LINE__);
 	if(buttonState == 0){
-		printMsgNL("Button Pressed!");
 		count++;
-		count = count % NUM_PWR_LVLS;
+		count = count % DUTY_CYCLE_LVLS;
+		check_Error(printMsgNL_USART2("Duty Cycle Changed to %%%u!", dutyCycle[count]),__FILE__,__LINE__);
 
-		setDutyCycle_Tim3Ch1(powerLevels[count]);
-		LL_mDelay(200);
+		check_Error(setDutyCycle_Tim3Ch1(dutyCycle[count]),__FILE__,__LINE__);
+		check_Error(delayTicks_Tmr3(200),__FILE__,__LINE__);
 	}
 
   }
@@ -195,10 +205,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	Central_Error_Handler(E_ERROR_GENERIC, __FILE__, __LINE__);
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
