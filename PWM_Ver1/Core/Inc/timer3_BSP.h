@@ -7,7 +7,7 @@
 #include "error_codes.h"
 
 /*****************Code to use the timer as a counter *****************************/
-void startCounter_Tmr3(void);
+ErrorCode_t startCounter_Tmr3(void);
 ErrorCode_t initCounter_Tmr3(uint32_t targetFreqHz);
 ErrorCode_t elapsedTicks_Tmr3(uint32_t *ticks);
 ErrorCode_t delayTicks_Tmr3(uint32_t ticks);

@@ -116,19 +116,19 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   LED_t OnboardLED;
-  initLED(&OnboardLED, GPIOA, PIN_5);
+  check_Error(initLED(&OnboardLED, GPIOA, PIN_5),__FILE__,__LINE__);
 
   Button_t UserButton;
-  initButton(&UserButton, GPIOC, PIN_13);
+  check_Error(initButton(&UserButton, GPIOC, PIN_13),__FILE__ ,__LINE__);
 
-  initUSART2();
+  check_Error(initUSART2(),__FILE__,__LINE__);
 
-  initCounter_Tmr3(1000);
-  initPWM_Tim3Ch1();
-  setDutyCycle_Tim3Ch1(100U);
-  startCounter_Tmr3();
+  check_Error(initCounter_Tmr3(1000),__FILE__,__LINE__);
+  check_Error(initPWM_Tim3Ch1(),__FILE__,__LINE__);
+  check_Error(setDutyCycle_Tim3Ch1(100U),__FILE__,__LINE__);
+  check_Error(startCounter_Tmr3(),__FILE__,__LINE__);
 
-  printMsgNL_USART2("Nucleo Initialized!");
+  check_Error(printMsgNL_USART2("Nucleo Initialized!"),__FILE__,__LINE__);
   __enable_irq();
 
 
@@ -140,21 +140,21 @@ int main(void)
   const uint16_t dutyCycle[DUTY_CYCLE_LVLS] = {0U,25U,50U,75U,100U};
 
   uint16_t buttonState, count = 0;
-  turnOffLED(&OnboardLED);
+  check_Error(turnOffLED(&OnboardLED),__FILE__,__LINE__);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
-	readButton(&UserButton, &buttonState);
+	  check_Error(readButton(&UserButton, &buttonState),__FILE__,__LINE__);
 	if(buttonState == 0){
 		count++;
 		count = count % DUTY_CYCLE_LVLS;
-		printMsgNL_USART2("Duty Cycle Changed to %%%u!", dutyCycle[count]);
+		check_Error(printMsgNL_USART2("Duty Cycle Changed to %%%u!", dutyCycle[count]),__FILE__,__LINE__);
 
-		setDutyCycle_Tim3Ch1(dutyCycle[count]);
-		delayTicks_Tmr3(200);
+		check_Error(setDutyCycle_Tim3Ch1(dutyCycle[count]),__FILE__,__LINE__);
+		check_Error(delayTicks_Tmr3(200),__FILE__,__LINE__);
 	}
 
   }
@@ -205,10 +205,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	Central_Error_Handler(E_ERROR_GENERIC, __FILE__, __LINE__);
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT

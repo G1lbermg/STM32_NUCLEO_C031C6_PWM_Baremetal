@@ -30,7 +30,7 @@ void Init_Error_Utilities_Logging(ErrorCode_t (*printFxn)(char *, ...));
 
 /***************Hardware Error Indicators*****************/
 //Comment or uncomment depending on whether or not it's needed
-#define HW_ERR_INDICATE_ENABLE
+//#define HW_ERR_INDICATE_ENABLE
 
 #ifdef HW_ERR_INDICATE_ENABLE
 

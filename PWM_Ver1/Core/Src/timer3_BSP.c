@@ -16,7 +16,7 @@ void TIM3_IRQHandler(void)
 	timer3Counter++;
 }
 
-void startCounter_Tmr3(void)
+ErrorCode_t startCounter_Tmr3(void)
 {
 	//Force update to registers
 	WRITE_REG(TIM3->EGR,TIM_EGR_UG);
@@ -29,6 +29,8 @@ void startCounter_Tmr3(void)
 
 	//Enable the counter
 	SET_BIT(TIM3->CR1, TIM_CR1_CEN);
+
+	return E_OK;
 }
 
 /*****************Code to setup the timer *****************************/
@@ -117,7 +119,7 @@ ErrorCode_t delayTicks_Tmr3(uint32_t ticks)
         // Check condition
         if (currentTime - startTime >= ticks)
         {
-            break; // Exit the function after 1000 milli-seconds have passed
+            break;
         }
 	}
 
