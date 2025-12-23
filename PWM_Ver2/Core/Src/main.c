@@ -131,7 +131,7 @@ int main(void)
 
   printMsgNL_USART2("Nucleo Initialized!");
 
-	__enable_irq();
+  __enable_irq();
 
   /* USER CODE END 2 */
 
@@ -143,17 +143,20 @@ int main(void)
   check_Error(turnOnLED(&boardLED), __FILE__,__LINE__);
 
   uint16_t adcData, pwmData;
+  uint8_t convStatus = 0;
   while (1)
   {
-	  check_Error(runADC_Ch0(), __FILE__,__LINE__);
-	  check_Error(readDataADC_Ch0(&adcData), __FILE__,__LINE__);
+	  check_Error(singleConvADC_Ch0(), __FILE__,__LINE__);
+	  check_Error(readDataADC_Ch0(&adcData, &convStatus), __FILE__,__LINE__);
 
-	  check_Error(printMsgNL_USART2("ADC1 DATA: %u", adcData), __FILE__,__LINE__);
+	  if(convStatus == 1){
+		  check_Error(printMsgNL_USART2("ADC1 DATA: %u", adcData), __FILE__,__LINE__);
 
-	  pwmData = CONVERT_ADC_TO_PWM(adcData);
-	  check_Error(setDutyCycle_Tim3Ch1(pwmData), __FILE__,__LINE__);
+		  pwmData = CONVERT_ADC_TO_PWM(adcData);
+		  check_Error(setDutyCycle_Tim3Ch1(pwmData), __FILE__,__LINE__);
+	  }
 
-	  check_Error(delayTicks_Tmr3(200), __FILE__,__LINE__);
+	  check_Error(delayTicks_Tmr3(50), __FILE__,__LINE__);
 
     /* USER CODE END WHILE */
 

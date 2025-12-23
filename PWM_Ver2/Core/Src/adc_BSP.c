@@ -1,7 +1,7 @@
 #include <adc_BSP.h>
 
 static volatile uint16_t dataADC1;
-static volatile uint8_t flagADC1Data = 0;
+static volatile uint8_t conversionComplete = 0, conversionInProgress = 0;
 
 
 /***************ADC interrupt will alert us when there is new data***************************/
@@ -9,7 +9,7 @@ void ADC1_IRQHandler (void)
 {
 	if(ADC1->ISR & ADC_ISR_EOC){
 		dataADC1 = ADC1->DR;
-		flagADC1Data = 1;
+		conversionComplete = 1;
 	}
 }
 
@@ -48,7 +48,7 @@ ErrorCode_t initADC_Ch0(void)
 	while(!(ADC1->ISR & ADC_ISR_CCRDY))
 		;
 
-	//Enable internal ADC voltage regulator then wait 20 micro sec for it to startup
+	//Enable internal ADC voltage regulator then wait at least 20 micro sec for it to startup
 	SET_BIT(ADC1->CR, ADC_CR_ADVREGEN);
 	LL_mDelay(1);
 
@@ -74,30 +74,41 @@ ErrorCode_t initADC_Ch0(void)
 
 }
 
-/***************ADC will start a conversion***************************/
-ErrorCode_t runADC_Ch0(void)
+/***************ADC will start a single conversion***************************/
+ErrorCode_t singleConvADC_Ch0(void)
 {
-	NVIC_DisableIRQ(ADC1_IRQn);
-    // Clear the flag before starting a new conversion
-    flagADC1Data = 0;
 
-    // Start the ADC conversion by setting the ADSTART bit in the Control Register
-    SET_BIT(ADC1->CR, ADC_CR_ADSTART);
-
-	NVIC_EnableIRQ(ADC1_IRQn);
+	if(conversionInProgress == 0 ){
+		// Start the ADC conversion by setting the ADSTART bit in the Control Register
+		SET_BIT(ADC1->CR, ADC_CR_ADSTART);
+		conversionInProgress = 1;
+	}
 
 	return E_OK;
 }
 
 /***************Retreive data after conversion**************************/
-ErrorCode_t readDataADC_Ch0(uint16_t *data)
+ErrorCode_t readDataADC_Ch0(uint16_t *data, uint8_t *convCompleted)
 {
-	  while(!flagADC1Data);
+
+	//Check for NULL Pointer
+	if(data == 0 || convCompleted == 0)
+		return E_INVALID_ARGUMENT;
 
 	  NVIC_DisableIRQ(ADC1_IRQn);
 
-	  *data = dataADC1;
-	  flagADC1Data = 0;
+	  if(conversionComplete){
+		  *data = dataADC1;
+
+		  conversionComplete = 0;
+		  conversionInProgress = 0;
+
+		  //Conversion has completed
+		  *convCompleted = 1;
+	  }
+	  else{
+		  *convCompleted = 0;
+	  }
 
 	  NVIC_EnableIRQ(ADC1_IRQn);
 

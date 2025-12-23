@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 ErrorCode_t initADC_Ch0(void);
-ErrorCode_t runADC_Ch0(void);
-ErrorCode_t readDataADC_Ch0(uint16_t *data);
+ErrorCode_t singleConvADC_Ch0(void);
+ErrorCode_t readDataADC_Ch0(uint16_t *data, uint8_t *convCompleted);
 
 #endif
