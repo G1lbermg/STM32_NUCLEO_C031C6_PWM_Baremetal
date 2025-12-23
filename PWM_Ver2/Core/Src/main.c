@@ -59,7 +59,7 @@
 #define PIN_14 0xEU
 #define PIN_15 0xFU
 
-#define MAX_ADC1_VALUE 4095 //ADC register is 12 bits
+#define MAX_ADC1_VALUE 4095 //ADC register has 12 bit resolution
 
 #define CONVERT_ADC_TO_PWM(value)	(((unsigned long)(value) * 100UL) / MAX_ADC1_VALUE)
 
@@ -140,23 +140,16 @@ int main(void)
 
   #define NUM_PWR_LVLS 5
 
- // const uint16_t powerLevels[NUM_PWR_LVLS] = {0U,25U,50U,75U,100U};
- // uint16_t buttonState, count = 0;
-
   check_Error(turnOnLED(&boardLED), __FILE__,__LINE__);
 
   uint16_t adcData, pwmData;
   while (1)
   {
-	  runADC_Ch0();
-	  while(!flagADC1Data);
+	  check_Error(runADC_Ch0(), __FILE__,__LINE__);
+	  check_Error(readDataADC_Ch0(&adcData), __FILE__,__LINE__);
 
-	  __disable_irq();
-	  adcData = dataADC1;
-	  flagADC1Data = 0;
-	  __enable_irq();
+	  check_Error(printMsgNL_USART2("ADC1 DATA: %u", adcData), __FILE__,__LINE__);
 
-	  check_Error(printMsgNL_USART2("ADC1 DATA: %u", dataADC1), __FILE__,__LINE__);
 	  pwmData = CONVERT_ADC_TO_PWM(adcData);
 	  check_Error(setDutyCycle_Tim3Ch1(pwmData), __FILE__,__LINE__);
 

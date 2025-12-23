@@ -1,7 +1,7 @@
 #include <adc_BSP.h>
 
-uint16_t volatile dataADC1;
-uint8_t volatile flagADC1Data = 0;
+static volatile uint16_t dataADC1;
+static volatile uint8_t flagADC1Data = 0;
 
 
 /***************ADC interrupt will alert us when there is new data***************************/
@@ -88,4 +88,20 @@ ErrorCode_t runADC_Ch0(void)
 
 	return E_OK;
 }
+
+/***************Retreive data after conversion**************************/
+ErrorCode_t readDataADC_Ch0(uint16_t *data)
+{
+	  while(!flagADC1Data);
+
+	  NVIC_DisableIRQ(ADC1_IRQn);
+
+	  *data = dataADC1;
+	  flagADC1Data = 0;
+
+	  NVIC_EnableIRQ(ADC1_IRQn);
+
+	  return E_OK;
+}
+
 

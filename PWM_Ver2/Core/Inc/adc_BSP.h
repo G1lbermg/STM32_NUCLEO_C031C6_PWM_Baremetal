@@ -6,10 +6,8 @@
 #include "stm32c0xx_ll_utils.h"
 #include <stdint.h>
 
-extern volatile uint16_t dataADC1;
-extern volatile uint8_t flagADC1Data;
-
 ErrorCode_t initADC_Ch0(void);
 ErrorCode_t runADC_Ch0(void);
+ErrorCode_t readDataADC_Ch0(uint16_t *data);
 
 #endif
