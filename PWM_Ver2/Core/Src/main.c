@@ -17,13 +17,13 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <errorCheckUtilities.h>
+#include <adc_BSP.h>
+#include "button_BSP.h"
+#include "led_BSP.h"
+#include "usart2_BSP.h"
+#include "timer3_BSP.h"
+#include "error_check_utilities.h"
 #include "main.h"
-#include "buttonBSP.h"
-#include "ledBSP.h"
-#include "timer3_PwmBSP.h"
-#include "uartBSP.h"
-#include "adc_Ch0_BSP.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -59,7 +59,7 @@
 #define PIN_14 0xEU
 #define PIN_15 0xFU
 
-#define MAX_ADC1_VALUE 4095 //ADC register is 12 bits
+#define MAX_ADC1_VALUE 4095 //ADC register has 12 bit resolution
 
 #define CONVERT_ADC_TO_PWM(value)	(((unsigned long)(value) * 100UL) / MAX_ADC1_VALUE)
 
@@ -111,19 +111,27 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
-	__enable_irq();
-
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
 
-  ERROR_CHECK(initLED(GPIOA, PIN_5));
+  LED_t boardLED;
+  check_Error(initLED(&boardLED,GPIOA, PIN_5),__FILE__, __LINE__);
 
-  initUART();
+  check_Error(initUSART2(), __FILE__,__LINE__);
+
+  check_Error(initCounter_Tmr3(1000), __FILE__,__LINE__);
+  check_Error(initPWM_Tim3Ch1(), __FILE__,__LINE__);
+  check_Error(setDutyCycle_Tim3Ch1(100U), __FILE__,__LINE__);
+  check_Error(startCounter_Tmr3(), __FILE__,__LINE__);
+
+
   initADC_Ch0();
-  initPWM_Tim3Ch1();
-  setDutyCycle_Tim3Ch1(100U);
+
+  printMsgNL_USART2("Nucleo Initialized!");
+
+  __enable_irq();
 
   /* USER CODE END 2 */
 
@@ -132,28 +140,23 @@ int main(void)
 
   #define NUM_PWR_LVLS 5
 
- // const uint16_t powerLevels[NUM_PWR_LVLS] = {0U,25U,50U,75U,100U};
- // uint16_t buttonState, count = 0;
-
-  turnOnLED(GPIOA, PIN_5);
+  check_Error(turnOnLED(&boardLED), __FILE__,__LINE__);
 
   uint16_t adcData, pwmData;
+  uint8_t convStatus = 0;
   while (1)
   {
+	  check_Error(singleConvADC_Ch0(), __FILE__,__LINE__);
+	  check_Error(readDataADC_Ch0(&adcData, &convStatus), __FILE__,__LINE__);
 
-	  runADC_Ch0();
-	  while(!flagADC1Data);
+	  if(convStatus == 1){
+		  check_Error(printMsgNL_USART2("ADC1 DATA: %u", adcData), __FILE__,__LINE__);
 
-	  __disable_irq();
-	  adcData = dataADC1;
-	  flagADC1Data = 0;
-	  __enable_irq();
+		  pwmData = CONVERT_ADC_TO_PWM(adcData);
+		  check_Error(setDutyCycle_Tim3Ch1(pwmData), __FILE__,__LINE__);
+	  }
 
-	  printMsg("ADC1 DATA: %u \r\n", dataADC1);
-	  pwmData = CONVERT_ADC_TO_PWM(adcData);
-	  setDutyCycle_Tim3Ch1(pwmData);
-
-	  LL_mDelay(200);
+	  check_Error(delayTicks_Tmr3(50), __FILE__,__LINE__);
 
     /* USER CODE END WHILE */
 
@@ -206,10 +209,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	Central_Error_Handler(E_ERROR_GENERIC, __FILE__, __LINE__);
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
