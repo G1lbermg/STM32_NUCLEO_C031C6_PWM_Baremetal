@@ -42,6 +42,9 @@ typedef enum
 	E_TIMER_CALC_ERROR            = -403,   // Prescaler plus one value was calculated to be zero
 	E_TIMER_FREQ_TOO_LOW          = -404,   // Frequency selected during initialization was too low
 
+	// --- 5. ADC Errors (-500 to -599) ---
+	E_ADC_INIT_FAILED             = -501,   // General failure during ADC peripheral initialization
+
 
 
     // --- Add more here as your project grows ---

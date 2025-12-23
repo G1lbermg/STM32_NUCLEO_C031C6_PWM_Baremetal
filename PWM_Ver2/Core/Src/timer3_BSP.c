@@ -88,9 +88,9 @@ ErrorCode_t elapsedTicks_Tmr3(uint32_t *ticks)
 	uint32_t readTime;
     // Read the current time of the counter
 
-	__disable_irq();
+	NVIC_DisableIRQ(TIM3_IRQn);
 	readTime = timer3Counter;
-	__enable_irq();
+	NVIC_EnableIRQ(TIM3_IRQn);
 
 	*ticks = readTime;
 

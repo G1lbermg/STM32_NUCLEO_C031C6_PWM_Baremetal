@@ -17,11 +17,11 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <adc_BSP.h>
 #include "button_BSP.h"
 #include "led_BSP.h"
 #include "usart2_BSP.h"
 #include "timer3_BSP.h"
-#include "adc_Ch0_BSP.h"
 #include "error_check_utilities.h"
 #include "main.h"
 
@@ -148,7 +148,6 @@ int main(void)
   uint16_t adcData, pwmData;
   while (1)
   {
-
 	  runADC_Ch0();
 	  while(!flagADC1Data);
 
@@ -161,7 +160,7 @@ int main(void)
 	  pwmData = CONVERT_ADC_TO_PWM(adcData);
 	  check_Error(setDutyCycle_Tim3Ch1(pwmData), __FILE__,__LINE__);
 
-	  LL_mDelay(200);
+	  check_Error(delayTicks_Tmr3(200), __FILE__,__LINE__);
 
     /* USER CODE END WHILE */
 

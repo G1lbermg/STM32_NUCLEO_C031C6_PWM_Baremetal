@@ -1,10 +1,20 @@
-#include "adc_Ch0_BSP.h"
+#include <adc_BSP.h>
 
 uint16_t volatile dataADC1;
 uint8_t volatile flagADC1Data = 0;
 
+
+/***************ADC interrupt will alert us when there is new data***************************/
+void ADC1_IRQHandler (void)
+{
+	if(ADC1->ISR & ADC_ISR_EOC){
+		dataADC1 = ADC1->DR;
+		flagADC1Data = 1;
+	}
+}
+
 /****************Steps to initialize PA0 to use as ADC_IN0*******************/
-void initADC_Ch0(void)
+ErrorCode_t initADC_Ch0(void)
 {
 	/***************Setup GPIO pin to be used as adc***************************/
 
@@ -59,32 +69,23 @@ void initADC_Ch0(void)
 
 	while(!(ADC1->ISR & ADC_ISR_ADRDY))
 		;
+
+	return E_OK;
+
 }
 
 /***************ADC will start a conversion***************************/
-void runADC_Ch0(void)
+ErrorCode_t runADC_Ch0(void)
 {
-	__disable_irq();
+	NVIC_DisableIRQ(ADC1_IRQn);
     // Clear the flag before starting a new conversion
     flagADC1Data = 0;
 
     // Start the ADC conversion by setting the ADSTART bit in the Control Register
     SET_BIT(ADC1->CR, ADC_CR_ADSTART);
 
-    __enable_irq();
+	NVIC_EnableIRQ(ADC1_IRQn);
+
+	return E_OK;
 }
-
-
-/***************ADC interrupt will alert us when there is new data***************************/
-void ADC1_IRQHandler (void)
-{
-	__disable_irq();
-	if(ADC1->ISR & ADC_ISR_EOC){
-		dataADC1 = ADC1->DR;
-		flagADC1Data = 1;
-	}
-	__enable_irq();
-
-}
-
 
