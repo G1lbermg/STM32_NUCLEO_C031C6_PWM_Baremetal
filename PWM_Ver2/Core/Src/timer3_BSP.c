@@ -1,134 +1,188 @@
 #include "timer3_BSP.h"
 
-#define PSC_VALUE 7499U
-#define ARR_VALUE 6399U
+#define ARR_VALUE 999U
+#define TMR_TICK_DIVISOR (ARR_VALUE +1)
 
-uint32_t volatile timeCounter3 = 0U;
+
+//Counter records the number of ticks elapsed since start of program.
+static uint32_t volatile timer3Counter = 0U;
 
 void TIM3_IRQHandler(void)
 {
-	__disable_irq();
-
 	// Clear the Update Interrupt Flag (UIF) if it was set by the UEV
 	CLEAR_BIT(TIM3->SR, TIM_SR_UIF);
 
 	//Increment timer
-	timeCounter3++;
-
-	__enable_irq();
+	timer3Counter++;
 }
 
-
-void initTmr3(void)
+ErrorCode_t startCounter_Tmr3(void)
 {
-	//Enable timer 3 clock gate
-	SET_BIT(RCC->APBENR1,RCC_APBENR1_TIM3EN);
-
-	//Set to up counting
-	CLEAR_BIT(TIM3->CR1, TIM_CR1_DIR);
-
-	//Update request only at counter overflow/underflow
-	SET_BIT(TIM3->CR1, TIM_CR1_URS);
-
-	//Enable UEV(update events)
-	CLEAR_BIT(TIM3->CR1,TIM_CR1_UDIS);
-
-	//Set prescaler to 7499, arr to 6399 to achieve 1Hz update frequency
-	WRITE_REG(TIM3->PSC,PSC_VALUE);
-	WRITE_REG(TIM3->ARR, ARR_VALUE);
-
 	//Force update to registers
 	WRITE_REG(TIM3->EGR,TIM_EGR_UG);
 
 	// Clear the Update Interrupt Flag (UIF) if it was set by the UEV
 	CLEAR_BIT(TIM3->SR, TIM_SR_UIF);
-
-	//Enable update interrupts
-	SET_BIT(TIM3->DIER,TIM_DIER_UIE);
 
 	//Enable timer3 interrupt
 	__NVIC_EnableIRQ(TIM3_IRQn);
 
 	//Enable the counter
 	SET_BIT(TIM3->CR1, TIM_CR1_CEN);
+
+	return E_OK;
 }
 
+/*****************Code to setup the timer *****************************/
+//Initialization code to setup a timer. System core clock expected to be 48Mhz
 
-
-void delay1Sec(void)
+ErrorCode_t initCounter_Tmr3(uint32_t targetFreqHz)
 {
-	uint32_t startTime;
+//------1. PSC value calculations---------
+	//Check that target frequency is within bounds
+	if (targetFreqHz == 0)
+		return E_INVALID_ARGUMENT;
 
-    // Read the starting time in a single critical section
-	__disable_irq();
-	startTime = timeCounter3;
-	__enable_irq();
+	if(targetFreqHz > (SystemCoreClock/TMR_TICK_DIVISOR))
+        return E_TIMER_FREQ_TOO_HIGH;
 
-	// The only time we need to disable IRQs is when reading timeCounter3.
-	while(1) // Loop forever until condition is met
-	{
-        uint32_t currentTime;
+	//Caclulate and check that the psc value is within bounds
+	uint32_t pscPlusOne = SystemCoreClock/(TMR_TICK_DIVISOR * targetFreqHz);
 
-        // Read the current time (critical section around a single 32-bit read)
-		__disable_irq();
-		currentTime = timeCounter3;
-		__enable_irq();
+	if(pscPlusOne == 0)
+		return E_TIMER_CALC_ERROR;
 
-        // Check condition
-        if (currentTime - startTime >= 1U)
-        {
-            break; // Exit the function after 1 second has passed
-        }
-	}
-}
-/**************************** Polling based code **********************/
+	uint32_t pscValue = pscPlusOne -1;
 
-/*
- #include "timer3_BSP.h"
+	// Check if the calculated PSC value fits in the 16-bit register
+	if (pscValue > 0xFFFF)
+		return E_TIMER_FREQ_TOO_LOW;
 
-
-#define PSC_VALUE 7499U
-#define ARR_VALUE 6399U
-
-
-void initTmr3(void)
-
-{
+//------2. Hardware register setup---------
 	//Enable timer 3 clock gate
 	SET_BIT(RCC->APBENR1,RCC_APBENR1_TIM3EN);
 
-	//Set to up counting
+	//Set to up counting and edge aligned mode
 	CLEAR_BIT(TIM3->CR1, TIM_CR1_DIR);
+	CLEAR_BIT(TIM3->CR1,TIM_CR1_CMS);
 
 	//Update request only at counter overflow/underflow
 	SET_BIT(TIM3->CR1, TIM_CR1_URS);
 
-	//Enable UEV(update events)
-	CLEAR_BIT(TIM3->CR1,TIM_CR1_UDIS);
-
-
-	//Set prescaler to 7499, arr to 6399 to achieve 1Hz update frequency
-	WRITE_REG(TIM3->PSC,PSC_VALUE);
+	//Set arr to 99, and psc to calculated value to achieve desired update frequency
+	WRITE_REG(TIM3->PSC,pscValue);
 	WRITE_REG(TIM3->ARR, ARR_VALUE);
 
+	//Enable update interrupts
+	SET_BIT(TIM3->DIER,TIM_DIER_UIE);
 
-	//Force update to registers
-	WRITE_REG(TIM3->EGR,TIM_EGR_UG);
-
-	//Enable the counter
-	SET_BIT(TIM3->CR1, TIM_CR1_CEN);
+	return E_OK;
 }
 
-
-void delay1Sec(void)
-
+ErrorCode_t elapsedTicks_Tmr3(uint32_t *ticks)
 {
-	// Clear the Update Interrupt Flag (UIF) if it was set by the UEV
-	CLEAR_BIT(TIM3->SR, TIM_SR_UIF);
+	//Check for NULL Pointer
+	if(ticks == 0)
+		return E_INVALID_ARGUMENT;
 
-	//Poll until 1 second has passed by
-	while(READ_BIT(TIM3->SR, TIM_SR_UIF) != 1)
-		;
+	uint32_t readTime;
+    // Read the current time of the counter
+
+	__disable_irq();
+	readTime = timer3Counter;
+	__enable_irq();
+
+	*ticks = readTime;
+
+	return E_OK;
 }
 
- */
+ErrorCode_t delayTicks_Tmr3(uint32_t ticks)
+{
+	uint32_t startTime, currentTime;
+	ErrorCode_t errorCheck;
+
+	// Establish a starting time
+	errorCheck = elapsedTicks_Tmr3(&startTime);
+
+	if(errorCheck != E_OK)
+		return errorCheck;
+
+	// The only time we need to disable IRQs is when reading timeCounter3.
+	while(1) // Loop forever until condition is met
+	{
+        // Read the current time
+		errorCheck = elapsedTicks_Tmr3(&currentTime);
+		if(errorCheck != E_OK)
+			return errorCheck;
+
+        // Check condition
+        if (currentTime - startTime >= ticks)
+        {
+            break;
+        }
+	}
+
+	return E_OK;
+}
+
+/*****************Code to use the timer to drive a PWM signal*****************************/
+
+//--------Timer 3 Channel 1 (PB4 on MCU)------------
+
+/*PWM output frequency is dependent on the one cofigured in the init function.*/
+ErrorCode_t initPWM_Tim3Ch1(void)
+{
+
+	/********************PWM on GPIO PB4 settings*************************/
+	//Enable PB4 clock gate
+	SET_BIT(RCC->IOPENR,RCC_IOPENR_GPIOBEN);
+
+	//Set to alternate function mode AF1
+	CLEAR_BIT(GPIOB->MODER, GPIO_MODER_MODE4);
+	SET_BIT(GPIOB->MODER, GPIO_MODER_MODE4_1);
+
+	CLEAR_BIT(GPIOB->AFR[0], GPIO_AFRL_AFSEL4);
+	SET_BIT(GPIOB->AFR[0], GPIO_AFRL_AFSEL4_0);
+
+	/********************Timer 3 Ch1 PWM settings*************************/
+
+	//Configure output pin
+	CLEAR_BIT(TIM3 -> CCMR1, TIM_CCMR1_CC1S); //configure pin as output
+	CLEAR_BIT(TIM3 -> CCMR1, TIM_CCMR1_CC2S); //configure pin as output
+
+	//Select the polarity writing the CCXP bit in CCER register
+	CLEAR_BIT(TIM3 -> CCER, TIM_CCER_CC1P); //Set to active high output
+
+	//Select pwm mode by writing to the OCXM bits in the CCMRX register
+	CLEAR_BIT(TIM3->CCMR1, TIM_CCMR1_OC1M);
+	SET_BIT(TIM3->CCMR1, TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2);
+
+	//Program the duty cycle using the ccr register
+	WRITE_REG(TIM3->CCR1, 0x0U);
+
+	//Set the pre-load bit in the CCMRX register and the ARPE bit in the CR1 register
+	SET_BIT(TIM3->CCMR1, TIM_CCMR1_OC1PE); //enable pre-load bit
+	SET_BIT(TIM3->CR1, TIM_CR1_ARPE); //enable auto pre-load
+
+	//Enable the capture compare
+	SET_BIT(TIM3->CCER,TIM_CCER_CC1E);
+
+	return E_OK;
+}
+
+ErrorCode_t setDutyCycle_Tim3Ch1(uint16_t percentage)
+{
+	uint16_t dutyCycle;
+
+	if(percentage > 100U || percentage < 0U){
+		return E_INVALID_ARGUMENT;
+	}
+	else{
+		dutyCycle = (percentage*(ARR_VALUE+1)) / 100; //technically ((percentage/100) * (ARR+1) but avoids truncating division
+		WRITE_REG(TIM3->CCR1, dutyCycle);
+
+		return E_OK;
+	}
+
+}
