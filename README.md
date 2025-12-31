@@ -1,36 +1,49 @@
-# Pulse Width Modulation
+# Pulse Width Modulation (PWM)
 ## STM32 NUCLEO-C031C6 Bare-Metal Implementation
 
-This repository contains a bare-metal C implementation of pulse width modulation on the STM32C031C6. While CubeMX is used for SWD/debug and clock initialization, all GPIO, timer, USART, and ADC manipulation is performed via direct memory-mapped register access. The project is split into two different versions. In Ver1: the user presses the onboard button to change the LED's brightness and a state machine keeps track of these presses to determine the PWM duty cycle. In Ver2: the MCU's analog to digital converter converts the variable signal from a potentiometer into LED brightness levels. Also included in each version is a multi-tiered error handler. The handler is integrated into all BSPs and enables the system to recover gracefully from common faults and protect itself from critical ones. Depending on the user's preference, the error handler can provide error logging using USART and/or indicate critical errors with an external LED.
+This repository demonstrates a bare-metal C implementation of Pulse Width Modulation (PWM) on the STM32C031C6. While CubeMX is used for SWD/debug and clock initialization, all GPIO, Timer, USART, and ADC manipulation is performed via direct memory-mapped register access. 
 
-### 1. Hardware Setup
+The project also features a multi-tiered error handler integrated into all BSPs, allowing the system to recover gracefully from faults. Users can configure the handler to provide real-time logging via USART or indicate critical errors via an external LED.
 
-   * **Board:** NUCLEO-C031C6
-   * **MCU:** STM32C031C6 (ARM Cortex-M0+)
-   * **Debugger:** ST-LINK V2-1 (SWD interface)
-   * **Onboard LED:** Configured to PA5 (User LED 4)
-   * **External LED:** Configured to PB4
-   * **Onboard Button (Ver1):** Configured to PC13 (B1 USER)
-   * **Potentiometer (Ver2):**
-     * PWR/GND leads connected to 3v3/GND respectively.
-     * Variable lead connected to PA0.
+---
 
-### 2. Software Setup
+### 🛠️ STM32 Nucleo Setup
 
-  * **IDE:** STM32CubeIDE 2.0.0
-  * **Programming Languages:** C
-  * **Toolchain:** GNU Tools for STM32 (13.3.rel1)
-  * **Libraries & Header Files:** 
-    * STM32 LL libraries
-    * CMSIS STM32C0xx
-    * CMSIS STM32C031xx (memory map)
+| Category | Details |
+| :--- | :--- |
+| **Hardware** | NUCLEO-C031C6 (ARM Cortex-M0+) |
+| **Debugger** | ST-LINK V2-1 (SWD interface) |
+| **IDE** | STM32CubeIDE 2.0.0 |
+| **Toolchain** | GNU Tools for STM32 (13.3.rel1) |
+| **Libraries** | STM32 LL, CMSIS STM32C0xx, CMSIS STM32C031xx |
 
-### 3. How to Run
-   1. **Import:** "PWM_Ver1" or "PWM_Ver2" sub folder as STM32CubeIde project
-   2. **Setup (Option):** Review and adjust the error handler logging and LED indicator settings within the error_check_utilities.h file
-   3. **Build:** Select Project > Build Project
-   4. **Flash:** use Run or Debug icons
-   5. **Run**:
-      * Open serial terminal and set to 9600 Baud
-      * Ver1: Press button and observe the LED dimming and messages printed to the terminal
-      * Ver2: Turn potentiometer knob and observe the LED dimming and messages printed to the terminal.
+---
+
+### 💡 Implementation Versions
+
+#### **Version 1: State Machine & Button Control**
+
+Uses the onboard user button to cycle through brightness levels. A software state machine tracks button presses to calculate the corresponding PWM duty cycle.
+* **Input:** PC13 (B1 USER Button)
+* **Output:** PB4 (External LED Receiving PWM Signal)
+  
+<img width="752" height="851" alt="Nucleo PWM State Machine" src="https://github.com/user-attachments/assets/20dfe87e-a97b-485e-a048-c67282b482ae" />
+
+#### **Version 2: ADC & Potentiometer Control**
+Utilizes the MCU's Analog-to-Digital Converter (ADC) to convert a variable voltage from a potentiometer into real-time LED brightness levels.
+* **Input:** PA0 (Analog Input Reading From Potentiometer)
+* **Output:** PB4 (External LED Receiving PWM Signal)
+
+<img width="950" height="656" alt="Nucleo PWM ADC" src="https://github.com/user-attachments/assets/615dc06a-fc68-4506-bdaf-11abfb78c61f" />
+
+---
+
+### 🚀 How to Run
+
+1. **Import:** Open either the `PWM_Ver1` or `PWM_Ver2` folder as an STM32CubeIDE project.
+2. **Configure:** (Optional) Adjust error logging and indicator settings in `error_check_utilities.h`.
+3. **Build & Flash:** Select **Project > Build**, then use the **Run** or **Debug** icons.
+4. **Monitor:**
+    * Open your serial terminal at **9600 Baud**.
+    * **Ver 1:** Press the button to cycle brightness; observe terminal feedback.
+    * **Ver 2:** Rotate the potentiometer; observe smooth dimming and real-time ADC data.
