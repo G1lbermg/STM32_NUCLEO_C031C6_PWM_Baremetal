@@ -1,9 +1,7 @@
 # Pulse Width Modulation (PWM)
 ## STM32 NUCLEO-C031C6 Bare-Metal Implementation
 
-This repository demonstrates a bare-metal C implementation of Pulse Width Modulation (PWM) on the STM32C031C6. While CubeMX is used for SWD/debug and clock initialization, all GPIO, Timer, USART, and ADC manipulation is performed via direct memory-mapped register access. 
-
-The project also features a multi-tiered error handler integrated into all BSPs, allowing the system to recover gracefully from faults. Users can configure the handler to provide real-time logging via USART or indicate critical errors via an external LED.
+This repository demonstrates a bare-metal C implementation of Pulse Width Modulation (PWM) on the STM32C031C6. While CubeMX is used for SWD/debug and clock initialization, all GPIO, Timer, USART, and ADC manipulation is performed via direct memory-mapped register access. The project also features a multi-tiered error handler integrated into all BSPs, allowing the system to recover gracefully from faults. Users can configure the handler to provide real-time logging via USART or indicate critical errors via an external LED.
 
 ---
 
