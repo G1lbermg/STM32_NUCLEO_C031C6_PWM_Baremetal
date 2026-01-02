@@ -125,7 +125,7 @@ int main(void)
 
   check_Error(initCounter_Tmr3(1000),__FILE__,__LINE__);
   check_Error(initPWM_Tim3Ch1(),__FILE__,__LINE__);
-  check_Error(setDutyCycle_Tim3Ch1(100U),__FILE__,__LINE__);
+  check_Error(setDutyCycle_Tim3Ch1(0U),__FILE__,__LINE__);
   check_Error(startCounter_Tmr3(),__FILE__,__LINE__);
 
   check_Error(printMsgNL_USART2("Nucleo Initialized!"),__FILE__,__LINE__);
