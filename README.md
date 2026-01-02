@@ -24,8 +24,8 @@ This repository demonstrates a bare-metal C implementation of Pulse Width Modula
 Uses the onboard user button to cycle through brightness levels. A software state machine tracks button presses to calculate the corresponding PWM duty cycle.
 * **Input:** PC13 (B1 USER Button)
 * **Output:** PB4 (External LED Receiving PWM Signal)
-  
-<img width="752" height="851" alt="Nucleo PWM State Machine" src="https://github.com/user-attachments/assets/20dfe87e-a97b-485e-a048-c67282b482ae" />
+
+<img width="934" height="965" alt="Nucleo PWM State Machine" src="https://github.com/user-attachments/assets/227e030a-115e-4e62-a3fa-2365258879cb" />
 
 #### **Version 2: ADC & Potentiometer Control**
 Utilizes the MCU's Analog-to-Digital Converter (ADC) to convert a variable voltage from a potentiometer into real-time LED brightness levels.
