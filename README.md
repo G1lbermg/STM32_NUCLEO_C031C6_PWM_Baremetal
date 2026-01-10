@@ -25,14 +25,16 @@ Uses the onboard user button to cycle through brightness levels. A software stat
 * **Input:** PC13 (B1 USER Button)
 * **Output:** PB4 (External LED Receiving PWM Signal)
 
-<img width="934" height="965" alt="Nucleo PWM State Machine" src="https://github.com/user-attachments/assets/227e030a-115e-4e62-a3fa-2365258879cb" />
+<img width="834" height="865" alt="Nucleo PWM State Machine" src="https://github.com/user-attachments/assets/753405b9-5da3-46ff-b683-8a37a8ab2739" />
+
 
 #### **Version 2: ADC & Potentiometer Control**
 Utilizes the MCU's Analog-to-Digital Converter (ADC) to convert a variable voltage from a potentiometer into real-time LED brightness levels.
 * **Input:** PA0 (Analog Input Reading From Potentiometer)
 * **Output:** PB4 (External LED Receiving PWM Signal)
 
-<img width="950" height="656" alt="Nucleo PWM ADC" src="https://github.com/user-attachments/assets/615dc06a-fc68-4506-bdaf-11abfb78c61f" />
+<img width="950" height="656" alt="Nucleo PWM ADC" src="https://github.com/user-attachments/assets/bf8740a5-2594-42c0-a69d-38c18d28b5d9" />
+
 
 ---
 
