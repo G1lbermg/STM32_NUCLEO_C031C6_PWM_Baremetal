@@ -40,7 +40,7 @@ Utilizes the MCU's Analog-to-Digital Converter (ADC) to convert a variable volta
 
 ### 🚀 How to Run
 
-1. **Import:** Open either the `PWM_Ver1` or `PWM_Ver2` folder as an STM32CubeIDE project.
+1. **Import:** Open either the `PWM_StateMachine` or `PWM_ADC` folder as an STM32CubeIDE project.
 2. **Configure:** (Optional) Adjust error logging and indicator settings in `error_check_utilities.h`.
 3. **Build & Flash:** Select **Project > Build**, then use the **Run** or **Debug** icons.
 4. **Monitor:**
